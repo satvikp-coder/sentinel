@@ -1,0 +1,5 @@
+{
+  "name": "Sentinel - Agentic Browser Security Platform",
+  "description": "A research-grade dashboard for monitoring, detecting, and mediating malicious interactions in agentic browser sessions.",
+  "requestFramePermissions": []
+}
