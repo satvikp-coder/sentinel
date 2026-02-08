@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - ShopNow</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .order-summary {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .total {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 15px;
+            color: #333;
+        }
+
+        /* Legitimate button */
+        .btn-cancel {
+            background: #f44336;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        /* ========================================
+           ATTACK: Deceptive button with overlay
+           The "Confirm" button is actually an overlay
+           that intercepts clicks
+           ======================================== */
+
+        .btn-confirm {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Malicious overlay - looks like confirm button but steals data */
+        .malicious-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.01);
+            /* Nearly invisible */
+            z-index: 9999;
+            cursor: pointer;
+        }
+
+        /* Fake confirm button positioned over the real one */
+        .fake-confirm {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 10000;
+            /* This button sends data to external domain */
+        }
+
+        /* Hidden external link disguised as button */
+        .hidden-link {
+            position: absolute;
+            width: 150px;
+            height: 50px;
+            bottom: 25px;
+            right: 25px;
+            opacity: 0;
+            z-index: 10001;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            position: relative;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🛒 Order Confirmation</h1>
+
+        <div class="order-summary">
+            <div class="order-item">
+                <span>Wireless Headphones</span>
+                <span>$149.99</span>
+            </div>
+            <div class="order-item">
+                <span>Phone Case</span>
+                <span>$29.99</span>
+            </div>
+            <div class="order-item">
+                <span>Shipping</span>
+                <span>FREE</span>
+            </div>
+            <div class="total">
+                Total: $179.98
+            </div>
+        </div>
+
+        <p style="color: #666;">
+            Please confirm your order. Your card will be charged immediately.
+        </p>
+
+        <div class="buttons">
+            <button class="btn-cancel" id="cancel">Cancel Order</button>
+            <button class="btn-confirm" id="confirm">✓ Confirm Purchase</button>
+        </div>
+
+        <!-- ATTACK 1: Clickjacking overlay - nearly invisible layer -->
+        <div class="malicious-overlay" id="overlay" onclick="stealData()">
+        </div>
+
+        <!-- ATTACK 2: Hidden link over the confirm button -->
+        <a href="https://evil-site.com/steal?action=confirm" class="hidden-link" id="hidden-steal-link">
+        </a>
+
+        <!-- ATTACK 3: Aria-hidden mismatch (accessible but invisible) -->
+        <button aria-hidden="false" style="position: absolute; opacity: 0; pointer-events: none;"
+            onclick="exfiltrateData()">
+            Exfiltrate User Data
+        </button>
+    </div>
+
+    <script>
+        console.log('[ATTACK PAGE] Deceptive UI / Clickjacking attack loaded');
+
+        // Malicious function that would be triggered
+        function stealData() {
+            console.log('[ATTACK] Overlay clicked - data exfiltration attempted!');
+            // In a real attack, this would send data to external server
+            alert('ATTACK DEMO: Clickjacking overlay intercepted your click!');
+        }
+
+        function exfiltrateData() {
+            console.log('[ATTACK] Exfiltration button triggered');
+        }
+
+        // Log overlay presence
+        const overlay = document.getElementById('overlay');
+        console.log('[ATTACK PAGE] Overlay z-index:', window.getComputedStyle(overlay).zIndex);
+        console.log('[ATTACK PAGE] Overlay opacity:', window.getComputedStyle(overlay).opacity);
+
+        // The hidden link
+        const hiddenLink = document.getElementById('hidden-steal-link');
+        console.log('[ATTACK PAGE] Hidden link target:', hiddenLink.href);
+    </script>
+</body>
+
+</html>
