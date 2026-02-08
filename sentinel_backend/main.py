@@ -152,7 +152,9 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
-
+@app.get("/")
+def home():
+    return{"message":"FastAPI running from sentinel_backend folder"}
 # Include your existing auth router
 # app.include_router(auth_router)
 
@@ -922,3 +924,4 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
