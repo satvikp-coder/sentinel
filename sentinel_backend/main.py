@@ -918,6 +918,55 @@ async def root():
 
 
 # ============================================
+# SMTP DEBUG ENDPOINT (for troubleshooting)
+# ============================================
+
+@app.get("/api/debug/smtp-test")
+async def test_smtp_connection():
+    """
+    Test SMTP connection without sending an email.
+    Use this to verify Railway environment variables are set correctly.
+    """
+    from sentinel_backend.utils_email import test_smtp_connection as smtp_test
+    import os
+    
+    # Check if env vars exist (without exposing values)
+    env_status = {
+        "SMTP_SERVER": "✅ Set" if os.getenv("SMTP_SERVER") else "❌ Missing",
+        "SMTP_PORT": "✅ Set" if os.getenv("SMTP_PORT") else "❌ Missing",
+        "SMTP_USERNAME": "✅ Set" if os.getenv("SMTP_USERNAME") else "❌ Missing",
+        "SMTP_PASSWORD": "✅ Set" if os.getenv("SMTP_PASSWORD") else "❌ Missing",
+        "SMTP_FROM": "✅ Set" if os.getenv("SMTP_FROM") else "⚠️ Not set (will use SMTP_USERNAME)",
+    }
+    
+    # Test connection
+    success, message = smtp_test()
+    
+    return {
+        "smtp_test": "✅ PASSED" if success else "❌ FAILED",
+        "message": message,
+        "env_vars": env_status,
+        "tip": "If SMTP_PASSWORD fails, ensure you're using a Gmail App Password, not your regular password"
+    }
+
+
+@app.post("/api/debug/send-test-email")
+async def send_test_email(email: str = Query(..., description="Email to send test to")):
+    """
+    Send a test email to verify full email pipeline.
+    """
+    from sentinel_backend.utils_email import send_otp_email_async
+    
+    success, message = await send_otp_email_async(email, "123456")
+    
+    return {
+        "success": success,
+        "message": message,
+        "sent_to": email
+    }
+
+
+# ============================================
 # RUN
 # ============================================
 
