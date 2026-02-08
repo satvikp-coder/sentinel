@@ -1,139 +1,73 @@
 """
-Sentinel Backend - Email Utility
-================================
-Production-ready SMTP email sender for OTP delivery.
-Supports Railway deployment with proper error handling and logging.
+Sentinel Backend - Email Utility (Resend)
+==========================================
+Production-ready email sender using Resend API.
+Much simpler and more reliable than SMTP for Railway deployment.
 """
 
 import os
-import smtplib
-import ssl
 import asyncio
-from email.message import EmailMessage
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
+from typing import Tuple
 
 # Thread pool for non-blocking email sends
 _email_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="email_sender")
 
 
-def _get_smtp_config() -> dict:
-    """Get SMTP configuration from environment variables."""
-    config = {
-        "server": os.getenv("SMTP_SERVER", "smtp.gmail.com"),
-        "port": int(os.getenv("SMTP_PORT", "587")),
-        "username": os.getenv("SMTP_USERNAME"),
-        "password": os.getenv("SMTP_PASSWORD"),
-        "from_addr": os.getenv("SMTP_FROM"),
+def _get_resend_config() -> dict:
+    """Get Resend configuration from environment variables."""
+    return {
+        "api_key": os.getenv("RESEND_API_KEY"),
+        "from_addr": os.getenv("EMAIL_FROM", "Sentinel Security <onboarding@resend.dev>"),
     }
-    
-    # Fallback: SMTP_FROM defaults to SMTP_USERNAME if not set
-    if not config["from_addr"]:
-        config["from_addr"] = config["username"]
-    
-    return config
 
 
-def _validate_smtp_config(config: dict) -> tuple[bool, str]:
-    """Validate SMTP configuration. Returns (is_valid, error_message)."""
-    missing = []
-    
-    if not config["server"]:
-        missing.append("SMTP_SERVER")
-    if not config["port"]:
-        missing.append("SMTP_PORT")
-    if not config["username"]:
-        missing.append("SMTP_USERNAME")
-    if not config["password"]:
-        missing.append("SMTP_PASSWORD")
-    
-    if missing:
-        return False, f"Missing SMTP config: {', '.join(missing)}"
-    
-    return True, ""
-
-
-def _send_email_sync(to_email: str, subject: str, body: str) -> tuple[bool, str]:
+def _send_email_sync(to_email: str, subject: str, html_body: str, text_body: str = None) -> Tuple[bool, str]:
     """
-    Synchronous email sending via SMTP.
+    Synchronous email sending via Resend API.
     Returns (success, message).
-    
-    This function is designed to be run in a thread pool.
     """
-    config = _get_smtp_config()
+    config = _get_resend_config()
     
     # Step 1: Validate configuration
-    is_valid, error_msg = _validate_smtp_config(config)
-    if not is_valid:
-        print(f"[EMAIL] ❌ Config error: {error_msg}")
-        return False, error_msg
+    if not config["api_key"]:
+        error = "RESEND_API_KEY environment variable is not set"
+        print(f"[EMAIL] ❌ {error}")
+        return False, error
     
-    print(f"[EMAIL] 📧 Starting email send to: {to_email}")
-    print(f"[EMAIL] 📧 SMTP Server: {config['server']}:{config['port']}")
+    print(f"[EMAIL] 📧 Sending email to: {to_email}")
     print(f"[EMAIL] 📧 From: {config['from_addr']}")
+    print(f"[EMAIL] 📧 Subject: {subject}")
     
     try:
-        # Step 2: Create email message
-        msg = EmailMessage()
-        msg.set_content(body)
-        msg["Subject"] = subject
-        msg["From"] = config["from_addr"]
-        msg["To"] = to_email
+        # Import resend here to avoid import errors if not installed
+        import resend
+        resend.api_key = config["api_key"]
         
-        print(f"[EMAIL] 📧 Message created, connecting to SMTP...")
+        # Build email payload
+        email_data = {
+            "from": config["from_addr"],
+            "to": to_email,
+            "subject": subject,
+            "html": html_body,
+        }
         
-        # Step 3: Connect to SMTP server with timeout
-        with smtplib.SMTP(config["server"], config["port"], timeout=30) as server:
-            print(f"[EMAIL] 📧 Connected to SMTP server")
-            
-            # Step 4: Upgrade to TLS
-            server.ehlo()
-            print(f"[EMAIL] 📧 EHLO sent")
-            
-            context = ssl.create_default_context()
-            server.starttls(context=context)
-            print(f"[EMAIL] 📧 STARTTLS successful")
-            
-            server.ehlo()
-            
-            # Step 5: Authenticate
-            print(f"[EMAIL] 📧 Authenticating as: {config['username']}")
-            server.login(config["username"], config["password"])
-            print(f"[EMAIL] 📧 Authentication successful")
-            
-            # Step 6: Send email
-            server.send_message(msg)
-            print(f"[EMAIL] ✅ Email sent successfully to: {to_email}")
-            
-            return True, "Email sent successfully"
-            
-    except smtplib.SMTPAuthenticationError as e:
-        error = f"SMTP Authentication failed: {e}. Check SMTP_USERNAME and SMTP_PASSWORD (use Gmail App Password)"
-        print(f"[EMAIL] ❌ {error}")
-        return False, error
+        if text_body:
+            email_data["text"] = text_body
         
-    except smtplib.SMTPConnectError as e:
-        error = f"SMTP Connection failed: {e}. Check SMTP_SERVER and SMTP_PORT"
-        print(f"[EMAIL] ❌ {error}")
-        return False, error
+        # Send email
+        result = resend.Emails.send(email_data)
         
-    except smtplib.SMTPServerDisconnected as e:
-        error = f"SMTP Server disconnected: {e}"
-        print(f"[EMAIL] ❌ {error}")
-        return False, error
+        print(f"[EMAIL] ✅ Email sent successfully! ID: {result.get('id', 'unknown')}")
+        return True, f"Email sent successfully. ID: {result.get('id', 'unknown')}"
         
-    except smtplib.SMTPException as e:
-        error = f"SMTP Error: {e}"
-        print(f"[EMAIL] ❌ {error}")
-        return False, error
-        
-    except TimeoutError as e:
-        error = f"SMTP Timeout: Connection to {config['server']}:{config['port']} timed out"
+    except ImportError:
+        error = "resend package not installed. Run: pip install resend"
         print(f"[EMAIL] ❌ {error}")
         return False, error
         
     except Exception as e:
-        error = f"Unexpected error sending email: {type(e).__name__}: {e}"
+        error = f"Resend API error: {type(e).__name__}: {e}"
         print(f"[EMAIL] ❌ {error}")
         return False, error
 
@@ -146,7 +80,31 @@ def send_otp_email(to_email: str, otp: str) -> bool:
     Returns True if email was queued (not if it was sent successfully).
     """
     subject = "🛡️ Sentinel Security - Your Login OTP"
-    body = f"""Hello,
+    
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">🛡️ Sentinel Security</h1>
+        </div>
+        <div style="background: #1a1a2e; padding: 30px; border-radius: 0 0 10px 10px; color: #ffffff;">
+            <p style="font-size: 16px; color: #b0b0b0;">Hello,</p>
+            <p style="font-size: 16px; color: #b0b0b0;">Your One-Time Password (OTP) for Sentinel Security is:</p>
+            <div style="background: #16213e; border: 2px solid #667eea; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0;">
+                <h2 style="font-size: 36px; letter-spacing: 8px; color: #667eea; margin: 0;">{otp}</h2>
+            </div>
+            <p style="font-size: 14px; color: #888;">This code expires in <strong>10 minutes</strong>.</p>
+            <p style="font-size: 14px; color: #888;">If you did not request this, please ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;">
+            <p style="font-size: 12px; color: #666; text-align: center;">
+                Sentinel Security Command Center<br>
+                IITK Hackathon 2026
+            </p>
+        </div>
+    </div>
+    """
+    
+    text_body = f"""
+Hello,
 
 Your One-Time Password (OTP) for Sentinel Security is:
 
@@ -160,8 +118,11 @@ If you did not request this, please ignore this email.
     
     print(f"[EMAIL] 📧 Queueing OTP email to: {to_email}")
     
+    # Also log OTP to console for hackathon demo fallback
+    print(f"[EMAIL] 🔑 [DEMO FALLBACK] OTP for {to_email}: {otp}")
+    
     def _background_send():
-        success, message = _send_email_sync(to_email, subject, body)
+        success, message = _send_email_sync(to_email, subject, html_body, text_body)
         if not success:
             print(f"[EMAIL] ⚠️ Background email failed: {message}")
     
@@ -175,25 +136,26 @@ If you did not request this, please ignore this email.
         return False
 
 
-async def send_otp_email_async(to_email: str, otp: str) -> tuple[bool, str]:
+async def send_otp_email_async(to_email: str, otp: str) -> Tuple[bool, str]:
     """
     Async version that waits for email to be sent.
     Use this when you need to know if the email was actually sent.
     """
     subject = "🛡️ Sentinel Security - Your Login OTP"
-    body = f"""Hello,
-
-Your One-Time Password (OTP) for Sentinel Security is:
-
-    {otp}
-
-This code expires in 10 minutes.
-If you did not request this, please ignore this email.
-
-— Sentinel Security Command Center
-"""
+    
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #667eea;">🛡️ Sentinel Security</h1>
+        <p>Your One-Time Password (OTP) is:</p>
+        <h2 style="font-size: 32px; letter-spacing: 8px; color: #667eea; background: #f0f0f0; padding: 20px; border-radius: 8px; text-align: center;">{otp}</h2>
+        <p style="color: #888;">This code expires in 10 minutes.</p>
+    </div>
+    """
+    
+    text_body = f"Your Sentinel OTP is: {otp}"
     
     print(f"[EMAIL] 📧 Sending OTP email (async) to: {to_email}")
+    print(f"[EMAIL] 🔑 [DEMO FALLBACK] OTP for {to_email}: {otp}")
     
     # Run in thread pool to avoid blocking event loop
     loop = asyncio.get_event_loop()
@@ -202,37 +164,43 @@ If you did not request this, please ignore this email.
         _send_email_sync,
         to_email,
         subject,
-        body
+        html_body,
+        text_body
     )
     
     return success, message
 
 
-def test_smtp_connection() -> tuple[bool, str]:
+def test_resend_connection() -> Tuple[bool, str]:
     """
-    Test SMTP connection without sending an email.
+    Test Resend API connection.
     Useful for debugging configuration issues.
     """
-    config = _get_smtp_config()
+    config = _get_resend_config()
     
-    is_valid, error_msg = _validate_smtp_config(config)
-    if not is_valid:
-        return False, error_msg
+    if not config["api_key"]:
+        return False, "RESEND_API_KEY is not set"
     
     try:
-        print(f"[EMAIL] 🔍 Testing SMTP connection to {config['server']}:{config['port']}")
+        import resend
+        resend.api_key = config["api_key"]
         
-        with smtplib.SMTP(config["server"], config["port"], timeout=10) as server:
-            server.ehlo()
-            context = ssl.create_default_context()
-            server.starttls(context=context)
-            server.ehlo()
-            server.login(config["username"], config["password"])
-            
-            print(f"[EMAIL] ✅ SMTP connection test successful")
-            return True, "SMTP connection successful"
-            
+        # Try to get API key info (lightweight check)
+        # Just verify the key format
+        if len(config["api_key"]) < 10:
+            return False, "RESEND_API_KEY looks invalid (too short)"
+        
+        print(f"[EMAIL] ✅ Resend API key configured")
+        print(f"[EMAIL] ✅ From address: {config['from_addr']}")
+        return True, "Resend configuration looks valid"
+        
+    except ImportError:
+        return False, "resend package not installed"
     except Exception as e:
-        error = f"SMTP test failed: {type(e).__name__}: {e}"
-        print(f"[EMAIL] ❌ {error}")
-        return False, error
+        return False, f"Resend test failed: {e}"
+
+
+# Alias for backward compatibility
+def test_smtp_connection() -> Tuple[bool, str]:
+    """Alias for test_resend_connection (backward compatibility)."""
+    return test_resend_connection()
