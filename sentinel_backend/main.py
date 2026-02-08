@@ -924,29 +924,28 @@ async def root():
 @app.get("/api/debug/smtp-test")
 async def test_smtp_connection():
     """
-    Test SMTP connection without sending an email.
+    Test Resend API connection.
     Use this to verify Railway environment variables are set correctly.
     """
-    from sentinel_backend.utils_email import test_smtp_connection as smtp_test
+    from sentinel_backend.utils_email import test_resend_connection
     import os
     
     # Check if env vars exist (without exposing values)
+    api_key = os.getenv("RESEND_API_KEY")
     env_status = {
-        "SMTP_SERVER": "✅ Set" if os.getenv("SMTP_SERVER") else "❌ Missing",
-        "SMTP_PORT": "✅ Set" if os.getenv("SMTP_PORT") else "❌ Missing",
-        "SMTP_USERNAME": "✅ Set" if os.getenv("SMTP_USERNAME") else "❌ Missing",
-        "SMTP_PASSWORD": "✅ Set" if os.getenv("SMTP_PASSWORD") else "❌ Missing",
-        "SMTP_FROM": "✅ Set" if os.getenv("SMTP_FROM") else "⚠️ Not set (will use SMTP_USERNAME)",
+        "RESEND_API_KEY": f"✅ Set ({len(api_key)} chars)" if api_key else "❌ Missing",
+        "EMAIL_FROM": os.getenv("EMAIL_FROM", "⚠️ Using default: onboarding@resend.dev"),
     }
     
     # Test connection
-    success, message = smtp_test()
+    success, message = test_resend_connection()
     
     return {
-        "smtp_test": "✅ PASSED" if success else "❌ FAILED",
+        "email_service": "Resend API",
+        "test_result": "✅ PASSED" if success else "❌ FAILED",
         "message": message,
         "env_vars": env_status,
-        "tip": "If SMTP_PASSWORD fails, ensure you're using a Gmail App Password, not your regular password"
+        "tip": "Set RESEND_API_KEY in Railway environment variables"
     }
 
 
