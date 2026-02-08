@@ -1,25 +1,29 @@
 """
-Sentinel Backend - Email Utility (Resend)
-==========================================
+Sentinel Backend - Email Utility (Resend + Demo Fallback)
+==========================================================
 Production-ready email sender using Resend API.
-Much simpler and more reliable than SMTP for Railway deployment.
+Hackathon-friendly with demo fallback for non-test users.
 """
 
 import os
+import random
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Tuple
+from datetime import datetime, timedelta
 
 # Thread pool for non-blocking email sends
 _email_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="email_sender")
 
+# Configuration
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", "Sentinel Security <onboarding@resend.dev>")
+TEST_EMAIL = "sentinel.iitk@gmail.com"  # Resend verified test account
 
-def _get_resend_config() -> dict:
-    """Get Resend configuration from environment variables."""
-    return {
-        "api_key": os.getenv("RESEND_API_KEY"),
-        "from_addr": os.getenv("EMAIL_FROM", "Sentinel Security <onboarding@resend.dev>"),
-    }
+
+def generate_otp() -> str:
+    """Generate a 6-digit OTP"""
+    return str(random.randint(100000, 999999))
 
 
 def _send_email_sync(to_email: str, subject: str, html_body: str, text_body: str = None) -> Tuple[bool, str]:
@@ -27,26 +31,27 @@ def _send_email_sync(to_email: str, subject: str, html_body: str, text_body: str
     Synchronous email sending via Resend API.
     Returns (success, message).
     """
-    config = _get_resend_config()
+    api_key = os.environ.get("RESEND_API_KEY")
+    from_addr = os.environ.get("EMAIL_FROM", "Sentinel Security <onboarding@resend.dev>")
     
     # Step 1: Validate configuration
-    if not config["api_key"]:
+    if not api_key:
         error = "RESEND_API_KEY environment variable is not set"
         print(f"[EMAIL] ❌ {error}")
         return False, error
     
     print(f"[EMAIL] 📧 Sending email to: {to_email}")
-    print(f"[EMAIL] 📧 From: {config['from_addr']}")
+    print(f"[EMAIL] 📧 From: {from_addr}")
     print(f"[EMAIL] 📧 Subject: {subject}")
     
     try:
         # Import resend here to avoid import errors if not installed
         import resend
-        resend.api_key = config["api_key"]
+        resend.api_key = api_key
         
         # Build email payload
         email_data = {
-            "from": config["from_addr"],
+            "from": from_addr,
             "to": to_email,
             "subject": subject,
             "html": html_body,
@@ -58,8 +63,9 @@ def _send_email_sync(to_email: str, subject: str, html_body: str, text_body: str
         # Send email
         result = resend.Emails.send(email_data)
         
-        print(f"[EMAIL] ✅ Email sent successfully! ID: {result.get('id', 'unknown')}")
-        return True, f"Email sent successfully. ID: {result.get('id', 'unknown')}"
+        email_id = result.get('id', 'unknown') if isinstance(result, dict) else getattr(result, 'id', 'unknown')
+        print(f"[EMAIL] ✅ Email sent successfully! ID: {email_id}")
+        return True, f"Email sent successfully. ID: {email_id}"
         
     except ImportError:
         error = "resend package not installed. Run: pip install resend"
@@ -74,10 +80,14 @@ def _send_email_sync(to_email: str, subject: str, html_body: str, text_body: str
 
 def send_otp_email(to_email: str, otp: str) -> bool:
     """
-    Send OTP email to user (non-blocking).
-    Uses thread pool to avoid blocking FastAPI event loop.
+    Send OTP email to user.
     
-    Returns True if email was queued (not if it was sent successfully).
+    Hackathon-friendly logic:
+    - Always logs OTP to console (for demo/judge testing)
+    - Only sends real email to verified test accounts
+    - Never blocks the FastAPI event loop
+    
+    Returns True if OTP was processed (logged + optionally sent).
     """
     subject = "🛡️ Sentinel Security - Your Login OTP"
     
@@ -116,24 +126,43 @@ If you did not request this, please ignore this email.
 — Sentinel Security Command Center
 """
     
-    print(f"[EMAIL] 📧 Queueing OTP email to: {to_email}")
+    # ============================================
+    # ALWAYS LOG OTP FOR DEMO/HACKATHON
+    # ============================================
+    print(f"")
+    print(f"╔══════════════════════════════════════════════════════════╗")
+    print(f"║  [DEMO MODE] OTP for {to_email}")
+    print(f"║  OTP CODE: {otp}")
+    print(f"╚══════════════════════════════════════════════════════════╝")
+    print(f"")
     
-    # Also log OTP to console for hackathon demo fallback
-    print(f"[EMAIL] 🔑 [DEMO FALLBACK] OTP for {to_email}: {otp}")
+    # ============================================
+    # DECIDE WHETHER TO SEND REAL EMAIL
+    # ============================================
+    should_send_real_email = to_email.lower() == TEST_EMAIL.lower() or os.environ.get("RESEND_SEND_ALL", "false").lower() == "true"
+    
+    if not should_send_real_email:
+        print(f"[EMAIL] ⏭️ Skipping real email for {to_email} (demo fallback mode)")
+        print(f"[EMAIL] ℹ️ To send real emails, use {TEST_EMAIL} or set RESEND_SEND_ALL=true")
+        return True
+    
+    # ============================================
+    # SEND REAL EMAIL (non-blocking)
+    # ============================================
+    print(f"[EMAIL] 📧 Queueing real email to: {to_email}")
     
     def _background_send():
         success, message = _send_email_sync(to_email, subject, html_body, text_body)
         if not success:
             print(f"[EMAIL] ⚠️ Background email failed: {message}")
     
-    # Submit to thread pool (non-blocking)
     try:
         _email_executor.submit(_background_send)
         print(f"[EMAIL] 📧 Email queued successfully")
         return True
     except Exception as e:
         print(f"[EMAIL] ❌ Failed to queue email: {e}")
-        return False
+        return True  # Still return True because OTP was logged
 
 
 async def send_otp_email_async(to_email: str, otp: str) -> Tuple[bool, str]:
@@ -154,8 +183,19 @@ async def send_otp_email_async(to_email: str, otp: str) -> Tuple[bool, str]:
     
     text_body = f"Your Sentinel OTP is: {otp}"
     
-    print(f"[EMAIL] 📧 Sending OTP email (async) to: {to_email}")
-    print(f"[EMAIL] 🔑 [DEMO FALLBACK] OTP for {to_email}: {otp}")
+    # Always log for demo
+    print(f"")
+    print(f"╔══════════════════════════════════════════════════════════╗")
+    print(f"║  [DEMO MODE] OTP for {to_email}")
+    print(f"║  OTP CODE: {otp}")
+    print(f"╚══════════════════════════════════════════════════════════╝")
+    print(f"")
+    
+    # Check if we should send real email
+    should_send = to_email.lower() == TEST_EMAIL.lower() or os.environ.get("RESEND_SEND_ALL", "false").lower() == "true"
+    
+    if not should_send:
+        return True, f"OTP logged to console (demo mode). Real email skipped for {to_email}"
     
     # Run in thread pool to avoid blocking event loop
     loop = asyncio.get_event_loop()
@@ -176,23 +216,25 @@ def test_resend_connection() -> Tuple[bool, str]:
     Test Resend API connection.
     Useful for debugging configuration issues.
     """
-    config = _get_resend_config()
+    api_key = os.environ.get("RESEND_API_KEY")
     
-    if not config["api_key"]:
+    if not api_key:
         return False, "RESEND_API_KEY is not set"
     
     try:
         import resend
-        resend.api_key = config["api_key"]
+        resend.api_key = api_key
         
-        # Try to get API key info (lightweight check)
-        # Just verify the key format
-        if len(config["api_key"]) < 10:
+        # Verify the key format
+        if len(api_key) < 10:
             return False, "RESEND_API_KEY looks invalid (too short)"
         
-        print(f"[EMAIL] ✅ Resend API key configured")
-        print(f"[EMAIL] ✅ From address: {config['from_addr']}")
-        return True, "Resend configuration looks valid"
+        from_addr = os.environ.get("EMAIL_FROM", "Sentinel Security <onboarding@resend.dev>")
+        
+        print(f"[EMAIL] ✅ Resend API key configured ({len(api_key)} chars)")
+        print(f"[EMAIL] ✅ From address: {from_addr}")
+        print(f"[EMAIL] ✅ Test email account: {TEST_EMAIL}")
+        return True, f"Resend configured. Test account: {TEST_EMAIL}"
         
     except ImportError:
         return False, "resend package not installed"
