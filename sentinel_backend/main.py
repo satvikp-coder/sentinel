@@ -86,17 +86,16 @@ from services import (
     cleanup_session
 )
 
-# Browser Manager (separate from services)
-from browser_manager import SecureBrowserSession, session_pool
-
-# Reporting (PDF)
-from reporting import generate_audit_report
-
-# ============================================
-# IMPORT AUTH MODULE
-# ============================================
-from auth import login as auth_login, signup as auth_signup, LoginRequest, SignupRequest, AuthResponse
-
+from sentinel_backend.browser_manager import SecureBrowserSession, session_pool
+from sentinel_backend.reporting import generate_audit_report
+from sentinel_backend.auth import (
+    login as auth_login,
+    signup as auth_signup,
+    LoginRequest,
+    SignupRequest,
+    AuthResponse,
+)
+from sentinel_backend.security_modules import assess_action_risk
 
 # ============================================
 # PYDANTIC MODELS
@@ -924,4 +923,5 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
 
