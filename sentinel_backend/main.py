@@ -924,28 +924,28 @@ async def root():
 @app.get("/api/debug/smtp-test")
 async def test_smtp_connection():
     """
-    Test Resend API connection.
+    Test Brevo API connection.
     Use this to verify Railway environment variables are set correctly.
     """
-    from sentinel_backend.utils_email import test_resend_connection
+    from sentinel_backend.utils_email import test_brevo_connection
     import os
     
-    # Check if env vars exist (without exposing values)
-    api_key = os.getenv("RESEND_API_KEY")
+    # Check if env vars exist
     env_status = {
-        "RESEND_API_KEY": f"✅ Set ({len(api_key)} chars)" if api_key else "❌ Missing",
-        "EMAIL_FROM": os.getenv("EMAIL_FROM", "⚠️ Using default: onboarding@resend.dev"),
+        "BREVO_API_KEY": "✅ Set" if os.getenv("BREVO_API_KEY") else "❌ Missing",
+        "BREVO_SENDER_EMAIL": os.getenv("BREVO_SENDER_EMAIL", "❌ Missing"),
+        "BREVO_SENDER_NAME": os.getenv("BREVO_SENDER_NAME", "⚠️ Using default"),
     }
     
     # Test connection
-    success, message = test_resend_connection()
+    success, message = test_brevo_connection()
     
     return {
-        "email_service": "Resend API",
+        "email_service": "Brevo (Sendinblue)",
         "test_result": "✅ PASSED" if success else "❌ FAILED",
         "message": message,
         "env_vars": env_status,
-        "tip": "Set RESEND_API_KEY in Railway environment variables"
+        "tip": "Verify BREVO_SENDER_EMAIL in Brevo dashboard → Senders"
     }
 
 
