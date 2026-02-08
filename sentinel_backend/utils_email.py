@@ -17,7 +17,7 @@ _email_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="email_se
 
 # Configuration
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
-EMAIL_FROM = os.environ.get("EMAIL_FROM", "Sentinel Security <onboarding@resend.dev>")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", "Sentinel IIT Kanpur <onboarding@resend.dev>")  # ASCII only, no emoji
 TEST_EMAIL = "sentinel.iitk@gmail.com"  # Resend verified test account
 
 
