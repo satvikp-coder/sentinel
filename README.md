@@ -20,7 +20,7 @@
 | ❤️ **Health Check** | https://sentinel-production-91f6.up.railway.app/health |
 
 ---
-
+[This includes a signup option for the security administrator, implemented so that judges can explore all frontend functionalities and see how each module works in real time.]
 ## 🎯 What is Sentinel?
 
 Sentinel is a **real-time security intelligence layer** for autonomous AI agents operating in browser environments. It protects against manipulation, enforces security policies, and provides forensic capabilities for incident investigation.
@@ -280,3 +280,4 @@ MIT License — Built for IITK Hackathon 2026
 <p align="center">
   🚀 <b>Sentinel — Defense at the Speed of Thought</b> 🚀
 </p>
+
