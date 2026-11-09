@@ -5,7 +5,7 @@ A security layer and dashboard for autonomous AI agents that browse the web. Bui
 ![Python](https://img.shields.io/badge/language-Python-3776AB?style=flat-square)
 ![TypeScript](https://img.shields.io/badge/frontend-TypeScript-3178C6?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Status](https://img.shields.io/badge/status-hackathon%20prototype-orange?style=flat-square)
+![Status](https://img.shields.io/badge/status-hackathon%20prototype%20(not%20hosted)-orange?style=flat-square)
 
 ## What it does
 
@@ -22,15 +22,12 @@ AI agents that browse the web can be tricked by text hidden in a page. I wanted 
 
 ## Demo
 
-- Frontend (Vercel): https://sentinel-swart-zeta.vercel.app
-- Backend API docs: https://sentinel-production-91f6.up.railway.app/docs
+- The hosted backend (Railway) is no longer running, so the Vercel frontend cannot reach a live API. Run it locally (below).
 - Screenshots: [TODO: add screenshot]
-
-The backend is a free-tier style deployment. It may be slow to wake or offline. [TODO: ask Satvik: is the Railway backend still running?]
 
 ### Demo access
 
-The app has a sign-up page for the security administrator role. It exists so hackathon judges could explore every module. Create your own account there. No shared login is published in this repo.
+The app has a sign-up page for the security administrator role. It exists so hackathon judges could explore every module. Create your own account there. No shared login is published in this repo. To seed an admin locally, set `SENTINEL_ADMIN_EMAIL` and `SENTINEL_ADMIN_PASSWORD` before starting the backend.
 
 ## Architecture
 
@@ -57,12 +54,10 @@ python -m sentinel_backend.main
 In a second terminal:
 
 ```powershell
-cd forntend
+cd frontend
 npm install
 npm run dev
 ```
-
-The frontend folder is currently spelled `forntend`. A rename is planned. [TODO: ask Satvik: approve renaming `forntend` to `frontend`?]
 
 Local URLs:
 - Frontend: http://localhost:5173
@@ -134,7 +129,7 @@ requirements.txt
 TechnicalDocumentation.md
 sentinel_backend/      FastAPI backend (main.py, auth.py, engines, scanners)
   services/            risk, trust, policy, forensics, demo, report engines
-forntend/              React + Vite + TypeScript dashboard
+frontend/              React + Vite + TypeScript dashboard
 Demo files/
 ```
 
@@ -143,7 +138,7 @@ Demo files/
 Hackathon prototype, HACK IITK 2026 Finalist. Open items:
 - Move user storage out of the repository and use salted password hashing.
 - Add a real evaluation of the detectors.
-- Fix the folder name and add tests.
+- Add tests.
 
 ## Team
 
