@@ -252,10 +252,14 @@ def verify_otp(email: str, otp: str) -> bool:
 # ============================================
 
 def seed_admin():
-    """Seed the default admin user"""
-    admin_email = "satvikb0301@gmail.com"
-    admin_password = "Satvik@559975"
-    
+    """Seed an admin user only if SENTINEL_ADMIN_EMAIL and SENTINEL_ADMIN_PASSWORD are set."""
+    import os
+    admin_email = os.environ.get("SENTINEL_ADMIN_EMAIL")
+    admin_password = os.environ.get("SENTINEL_ADMIN_PASSWORD")
+    if not admin_email or not admin_password:
+        print("ℹ️ No admin seeded (set SENTINEL_ADMIN_EMAIL and SENTINEL_ADMIN_PASSWORD to seed one)")
+        return
+
     if not user_exists(admin_email):
         create_user(
             email=admin_email,
@@ -263,9 +267,9 @@ def seed_admin():
             role="ADMIN",
             is_admin=True
         )
-        print(f"✅ Admin user seeded: {admin_email}")
+        print("✅ Admin user seeded")
     else:
-        print(f"ℹ️ Admin user already exists: {admin_email}")
+        print("ℹ️ Admin user already exists")
 
 
 # Seed admin on module import
