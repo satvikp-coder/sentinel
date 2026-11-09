@@ -18,7 +18,7 @@ A security layer and dashboard for autonomous AI agents that browse the web. Bui
 
 ## Why I built it
 
-AI agents that browse the web can be tricked by text hidden in a page. I wanted to see how far simple, checkable guards could go. This was a hackathon prototype built with a team.
+AI agents that browse the web can be tricked by text hidden in a page. I wanted to see how far simple, checkable guards could go. This was a hackathon prototype that I built alone.
 
 ## Demo
 
@@ -142,7 +142,7 @@ Hackathon prototype, HACK IITK 2026 Finalist. Open items:
 
 ## Team
 
-Built by a team for HACK IITK 2026. [TODO: ask Satvik: list team members and your role]
+Solo project by Satvik Patel, built for HACK IITK 2026.
 
 ## License
 
