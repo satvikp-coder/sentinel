@@ -1,283 +1,154 @@
-# 🛡️ Sentinel — Secure Agentic Browser Framework
+# Sentinel: Secure Agentic Browser Framework
 
-> **Anti-Gravity Project** | AI-Powered Security Command Center for Autonomous Browser Agents
+A security layer and dashboard for autonomous AI agents that browse the web. Built for HACK IITK 2026 (Finalist).
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Status](https://img.shields.io/badge/Status-🟢%20Live-brightgreen?style=for-the-badge)
+![Python](https://img.shields.io/badge/language-Python-3776AB?style=flat-square)
+![TypeScript](https://img.shields.io/badge/frontend-TypeScript-3178C6?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Status](https://img.shields.io/badge/status-hackathon%20prototype-orange?style=flat-square)
 
----
+## What it does
 
-## 🌐 Live Production
+- Watches what a browser agent does and gives each session a risk score and a trust score.
+- Scans pages for hidden content, including Shadow DOM, and for prompt injection.
+- Checks that an agent action matches the task it was given (the "semantic firewall").
+- Places invisible decoy prompts ("honey-prompts"). If an agent follows one, the session is flagged.
+- Keeps a 60-second replay buffer so an incident can be reviewed afterwards.
+- Applies configurable policy rules that can block actions.
 
-| Service | URL |
-|---------|-----|
-| 🔌 **Backend API** | https://sentinel-production-91f6.up.railway.app |
-| 📖 **API Docs (Swagger)** | https://sentinel-production-91f6.up.railway.app/docs |
-| 🔗 **WebSocket** | `wss://sentinel-production-91f6.up.railway.app/ws/mission-control/{session_id}` |
-| ❤️ **Health Check** | https://sentinel-production-91f6.up.railway.app/health |
+## Why I built it
 
----
-[This includes a signup option for the security administrator, implemented so that judges can explore all frontend functionalities and see how each module works in real time.]
-## 🎯 What is Sentinel?
+AI agents that browse the web can be tricked by text hidden in a page. I wanted to see how far simple, checkable guards could go. This was a hackathon prototype built with a team.
 
-Sentinel is a **real-time security intelligence layer** for autonomous AI agents operating in browser environments. It protects against manipulation, enforces security policies, and provides forensic capabilities for incident investigation.
+## Demo
 
-### Core Capabilities
+- Frontend (Vercel): https://sentinel-swart-zeta.vercel.app
+- Backend API docs: https://sentinel-production-91f6.up.railway.app/docs
+- Screenshots: [TODO: add screenshot]
 
-| Feature | Description |
-|---------|-------------|
-| 🍯 **Honey-Prompt Traps** | Invisible decoys detect malicious agent behavior before damage |
-| 👁️ **Shadow DOM X-Ray** | Deep scanning reveals hidden malicious content |
-| 🧠 **Semantic Firewall** | Validates agent actions match stated intentions |
-| ⏪ **Time-Travel Forensics** | 60-second replay buffer for investigation |
-| 📊 **Risk Scoring Engine** | Real-time threat assessment with DEFCON levels |
-| 🔐 **Policy Enforcement** | Configurable rules for action blocking |
+The backend is a free-tier style deployment. It may be slow to wake or offline. [TODO: ask Satvik: is the Railway backend still running?]
 
----
+### Demo access
 
-## 🏗️ Architecture
+The app has a sign-up page for the security administrator role. It exists so hackathon judges could explore every module. Create your own account there. No shared login is published in this repo.
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     MISSION CONTROL (React Frontend)            │
-│                    WebSocket ←→ REST API                        │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      FASTAPI BACKEND                             │
-│  WebSocket Orchestrator │ REST Endpoints │ Report Generator     │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              SECURITY INTELLIGENCE LAYER                         │
-│  Risk Engine │ Trust Engine │ Policy Engine │ Forensics Engine  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   SECURITY MODULES                               │
-│  Honey-Prompt │ Shadow DOM │ Semantic Firewall │ Hallucination  │
-└─────────────────────────────────────────────────────────────────┘
+React dashboard (Mission Control)  <-- WebSocket + REST -->  FastAPI backend
+                                                                 |
+                  Risk, Trust, Policy, Forensics engines (sentinel_backend/services)
+                                                                 |
+     Honey-prompt | Shadow DOM scanner | Semantic firewall | Hallucination detector
 ```
 
----
+## How to run
 
-## 📁 Project Structure
-
-```
-main/
-├── requirements.txt              # Python dependencies
-├── README.md                     # This file
-│
-├── sentinel_backend/             # FastAPI Backend (Python)
-│   ├── __init__.py               # Package marker
-│   ├── main.py                   # API entry point
-│   ├── auth.py                   # Authentication & OTP
-│   ├── browser_engine.py         # Secure browser wrapper
-│   ├── security_engine.py        # Threat detection
-│   ├── models.py                 # Data models
-│   └── services/                 # Intelligence Layer
-│       ├── risk_engine.py
-│       ├── trust_engine.py
-│       ├── policy_engine.py
-│       ├── forensics_engine.py
-│       ├── demo_engine.py
-│       └── report_engine.py
-│
-└── forntend/                     # React Frontend (Vite + TypeScript)
-    ├── .env                      # Environment variables
-    ├── App.tsx                   # Main application
-    ├── services/api.ts           # API configuration
-    ├── components/               # UI components
-    └── pages/                    # Dashboard pages
-```
-
----
-
-## 📡 Complete API Reference
-
-### 🔐 Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login (sends OTP) |
-| POST | `/api/auth/signup` | Register new user |
-| POST | `/api/auth/verify-otp` | Verify OTP code |
-
-### 🛡️ Security
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/security/session/{session_id}/risk` | Get session risk score |
-| GET | `/api/security/session/{session_id}/trust` | Get session trust score |
-| POST | `/api/security/check-action` | Check if action is allowed |
-
-### 📋 Policy Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/policy/{scope_id}` | Get policy configuration |
-| PUT | `/api/policy/{scope_id}` | Update policy |
-| GET | `/api/policy/{scope_id}/history` | Get policy change history |
-
-### 🔍 Forensics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/forensics/{session_id}/timeline` | Get event timeline |
-| GET | `/api/forensics/{session_id}/critical-moments` | Get critical events |
-| GET | `/api/forensics/{session_id}/snapshot/{index}` | Get specific snapshot |
-| GET | `/api/forensics/{session_id}/replay` | Get replay data |
-
-### 📊 Reports & Metrics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/reports/{session_id}` | Generate session report |
-| GET | `/api/reports/{session_id}/risk-graph` | Get risk over time |
-| GET | `/api/metrics/session/{session_id}` | Session metrics |
-| GET | `/api/metrics/global` | Global system metrics |
-| GET | `/api/metrics/judge/{session_id}` | **Judge rubric metrics** |
-
-### 🎬 Demo & Simulation
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/demo/scenarios` | List attack scenarios |
-| POST | `/api/demo/run/{attack_type}` | Run specific attack |
-| POST | `/api/demo/run-all` | Run all attack scenarios |
-| POST | `/api/demo/full-simulation` | **Full demo (always succeeds)** |
-| POST | `/api/demo/stop/{session_id}` | Stop running demo |
-
-### 👤 Feedback
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/agent/session/{session_id}/feedback` | Submit threat feedback |
-
-### ⚙️ System
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Root endpoint |
-| GET | `/health` | Health check + metrics |
-
----
-
-## 🚀 Local Development
-
-### Backend Setup
+You need Python 3.10+ and Node.js. From the repository root:
 
 ```powershell
-cd main
-
-# Create virtual environment
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-
-# Install dependencies
 pip install -r requirements.txt
 playwright install chromium
-
-# Run backend
 python -m sentinel_backend.main
 ```
 
-### Frontend Setup
+In a second terminal:
 
 ```powershell
 cd forntend
-
-# Install dependencies
 npm install
-
-# Run frontend
 npm run dev
 ```
 
-### Local URLs
+The frontend folder is currently spelled `forntend`. A rename is planned. [TODO: ask Satvik: approve renaming `forntend` to `frontend`?]
+
+Local URLs:
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+- API docs: http://localhost:8000/docs
 
----
+### Environment variables
 
-## ⚙️ Environment Variables
+The frontend reads two values. Put them in a local `.env` file that is not committed:
 
-### Frontend (`forntend/.env`)
 ```env
-VITE_API_BASE=https://sentinel-production-91f6.up.railway.app
-VITE_WS_BASE=wss://sentinel-production-91f6.up.railway.app
+VITE_API_BASE=http://localhost:8000
+VITE_WS_BASE=ws://localhost:8000
 ```
 
-### Vercel Deployment
-Add these in **Vercel → Project → Settings → Environment Variables**:
+For a Vercel deployment, set the same two names in the project settings with your own backend URL.
 
-| Name | Value |
-|------|-------|
-| `VITE_API_BASE` | `https://sentinel-production-91f6.up.railway.app` |
-| `VITE_WS_BASE` | `wss://sentinel-production-91f6.up.railway.app` |
+## Tech stack
 
----
+Python, FastAPI, Playwright, WebSockets, React, TypeScript, Vite.
 
-## 🔐 Default Credentials
+## Defense matrix
 
-| Email | Password | Role |
-|-------|----------|------|
-| satvikb0301@gmail.com | Satvik@559975 | Admin |
+| Attack vector | Defense module | Response |
+|---|---|---|
+| Prompt injection | Injection scanner | Block and alert |
+| Hidden content | Shadow DOM scanner | Reveal and raise risk |
+| Intent mismatch | Semantic firewall | Ask for confirmation and log |
+| Clickjacking | Visual hallucination detector | Block and report |
+| Adversarial traps | Honey-prompt trap | End session, highest alert level |
 
----
+## Results, what works, and limits
 
-## 🧪 Quick Test Commands
+- Approximate timings from demo runs (no formal benchmark; method not recorded):
+
+| Operation | Target | Seen in demo runs |
+|---|---|---|
+| Risk scoring | under 20 ms | about 12 ms |
+| DOM scan | under 100 ms | about 45 ms |
+| WebSocket event | under 50 ms | about 15 ms |
+
+- The `/api/demo/full-simulation` endpoint is a scripted demo. It is built to show every module, so it always succeeds. It is not a measure of detection quality.
+- There is no evaluation against a public attack dataset. Detection rates are not claimed.
+- Authentication is a prototype (JSON user file and email OTP). It is not production-grade.
+
+## API overview
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /api/auth/login`, `/api/auth/signup`, `/api/auth/verify-otp` |
+| Security | `GET /api/security/session/{id}/risk`, `/trust`; `POST /api/security/check-action` |
+| Policy | `GET/PUT /api/policy/{scope_id}`, `GET /api/policy/{scope_id}/history` |
+| Forensics | `GET /api/forensics/{id}/timeline`, `/critical-moments`, `/snapshot/{index}`, `/replay` |
+| Reports and metrics | `GET /api/reports/{id}`, `/api/reports/{id}/risk-graph`, `/api/metrics/session/{id}`, `/api/metrics/global`, `/api/metrics/judge/{id}` |
+| Demo | `GET /api/demo/scenarios`, `POST /api/demo/run/{attack_type}`, `/run-all`, `/full-simulation`, `/stop/{id}` |
+| Feedback | `POST /api/agent/session/{id}/feedback` |
+| System | `GET /`, `GET /health` |
+
+Quick check:
 
 ```bash
-# Health check
-curl https://sentinel-production-91f6.up.railway.app/health
-
-# Run full simulation
-curl -X POST "https://sentinel-production-91f6.up.railway.app/api/demo/full-simulation?session_id=test"
-
-# Get judge metrics
-curl https://sentinel-production-91f6.up.railway.app/api/metrics/judge/test
-
-# Get global metrics
-curl https://sentinel-production-91f6.up.railway.app/api/metrics/global
+curl http://localhost:8000/health
 ```
 
----
+## Project structure
 
-## 📊 Performance Metrics
+```
+requirements.txt
+TechnicalDocumentation.md
+sentinel_backend/      FastAPI backend (main.py, auth.py, engines, scanners)
+  services/            risk, trust, policy, forensics, demo, report engines
+forntend/              React + Vite + TypeScript dashboard
+Demo files/
+```
 
-| Operation | Target | Actual |
-|-----------|--------|--------|
-| Risk Scoring | <20ms | ~12ms |
-| DOM Scan | <100ms | ~45ms |
-| WebSocket Event | <50ms | ~15ms |
+## Status and next steps
 
----
+Hackathon prototype, HACK IITK 2026 Finalist. Open items:
+- Move user storage out of the repository and use salted password hashing.
+- Add a real evaluation of the detectors.
+- Fix the folder name and add tests.
 
-## 🛡️ Defense Matrix
+## Team
 
-| Attack Vector | Defense Module | Response |
-|--------------|----------------|----------|
-| Prompt Injection | Injection Scanner | BLOCK + Alert |
-| Hidden Content | Shadow DOM X-Ray | REVEAL + Risk |
-| Intent Mismatch | Semantic Firewall | CONFIRM + Log |
-| Clickjacking | Visual Hallucination | BLOCK + Report |
-| Adversarial Traps | Honey-Prompt Trap | TERMINATE + DEFCON 5 |
+Built by a team for HACK IITK 2026. [TODO: ask Satvik: list team members and your role]
 
----
+## License
 
-## 📝 License
-
-MIT License — Built for IITK Hackathon 2026
-
----
-
-## 👥 Team
-
-**Project Anti-Gravity** — Building the future of secure autonomous agents.
-
----
-
-<p align="center">
-  🚀 <b>Sentinel — Defense at the Speed of Thought</b> 🚀
-</p>
-
+MIT. See `LICENSE`.
